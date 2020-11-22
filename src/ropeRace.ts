@@ -1,8 +1,9 @@
 import * as ECS from '../libs/pixi-ecs';
 import * as PIXI from 'pixi.js';
 import {GameLoop} from './Components/gameLoop';
-import {GAME_WIDTH,GAME_HEIGHT} from "./utils/constants";
+import {GAME_WIDTH,GAME_HEIGHT, Assets} from "./utils/constants";
 import {LevelFactory} from "./Factories/levelFactory";
+import { SoundComponent } from './Components/soundComponent';
 
 
 
@@ -31,9 +32,16 @@ class RopeRace {
 		});
 
 
+		// asset source
+		// https://sfx.productioncrate.com/sound-fx-categories.html#_ga=2.164433212.2088872787.1606083568-1021825284.1606083568
+		// https://www.soundsnap.com/search/audio/level%20complete/score
+
+		// assets path vůči tomu, kde se to pouští => dávat úplnou cestu
 		this.engine.app.loader
 			.reset()
-			//.add(myFile, 'myFileUrl') load your assets here
+			.add(Assets.P1_AVATAR, '../../assets/ghost.png')
+		//	.add(Assets.FINISH, '../assets/ghost.png')
+			.add(Assets.LEVEL_COMPLETE_SOUND, '../../assets/level_complete.mp3')
 			.load(() => this.onAssetsLoaded());
 	}
 
@@ -42,7 +50,7 @@ class RopeRace {
 		let scene = this.engine.scene;
 
 		this.engine.scene.addGlobalComponent(new ECS.KeyInputComponent());
-		//this.engine.scene.addGlobalComponent(SoundComponent());
+		this.engine.scene.addGlobalComponent(new SoundComponent());
 		this.engine.scene.addGlobalComponent(new GameLoop());
 		//this.engine.scene.addGlobalComponent(gameManager);
 	}

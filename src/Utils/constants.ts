@@ -16,8 +16,21 @@ export enum Players_id {
     P1 = "P1",
     P2 = "P2"
 }
+export enum Messages {
+    FINISH_MESSAGE = "FINISH_MESSAGE",
+    PLAYER_DEATH = "PLAYER_DEATH"
+}
+
+export enum Assets {
+    P1_AVATAR = "P1_AVATAR",
+    FINISH = "FINISH",
+    LEVEL_COMPLETE_SOUND = "LEVEL_COMPLETE_SOUND"
+}
+
 export const P1_ROPE = "P1_ROPE"
 export const P2_ROPE = "P2_ROPE"
+
+export const FINISH_LABEL = "FINISH_LABEL"
 
 export const INIT_PLAYER_LIVE = 100
 export const INIT_PLAYER_SPEED = 1
@@ -30,6 +43,10 @@ export const BORDER_SIZE = 20
 
 export const PLAYER_HEIGHT = 20
 export const ROTATE_COEFFICIENT = 0.005
+
+
+
+
 
 
 export enum Assets{

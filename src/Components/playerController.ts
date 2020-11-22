@@ -4,7 +4,7 @@ import * as ECS from '../../libs/pixi-ecs';
 import * as PixiMatter from '../../libs/pixi-matter';
 import { Player } from "../Model/player";
 import { Rope } from "../Model/rope";
-import { ControlKey, ROTATE_COEFFICIENT, INIT_PLAYER_SPEED, ROPE_SPEED_INCREASE, Players_id, PLAYER_HEIGHT, P1_ROPE, P2_ROPE } from "../utils/constants";
+import { ControlKey, ROTATE_COEFFICIENT, INIT_PLAYER_SPEED, ROPE_SPEED_INCREASE, Players_id, PLAYER_HEIGHT, P1_ROPE, P2_ROPE, FINISH_LABEL,Messages } from "../utils/constants";
 
 
 // collission example:  https://codepen.io/lonekorean/pen/KXLrVX
@@ -18,18 +18,12 @@ export class PlayerController extends ECS.Component {
 
     private binder: PixiMatter.MatterBind
 
-
-    private ropeMatter: PixiMatter.MatterBody
-    private ropeConstraint: PixiMatter.MatterConstraint
-
     private player: Player
 
-    private rope: Rope
-
-    private releasedRopeAngle: number
+    private rope: Rope = null
     private ropeSpeedIncrease: number = ROPE_SPEED_INCREASE
-    private ropeLabel: string
 
+    private finishMessageSend: boolean = false
 
 
 
@@ -49,7 +43,6 @@ export class PlayerController extends ECS.Component {
         ownerMatter.body.label = this.player.id
 
         if (this.player.playerNumber == 1) {
-            this.ropeLabel = P1_ROPE
 
             this.turn_left_key = ControlKey.TURN_LEFT_P1
             this.turn_right_key = ControlKey.TURN_RIGHT_P1
@@ -57,7 +50,6 @@ export class PlayerController extends ECS.Component {
             this.release_rope_key = ControlKey.RELEASE_ROPE_P1
         }
         else if (this.player.playerNumber == 2) {
-            this.ropeLabel = P2_ROPE
 
             this.turn_left_key = ControlKey.TURN_LEFT_P2
             this.turn_right_key = ControlKey.TURN_RIGHT_P2
@@ -69,6 +61,7 @@ export class PlayerController extends ECS.Component {
     onUpdate(delta: number, absolute: number) {
         let rotateSpeed = ROTATE_COEFFICIENT * delta
         let playerMatter = this.player.playerMatter
+        let ropeExists = (this.rope != null)
 
         if (this.keyInputsComp.isKeyPressed(this.turn_left_key)) {
             Matter.Body.rotate(playerMatter.body, rotateSpeed)
@@ -78,126 +71,125 @@ export class PlayerController extends ECS.Component {
 
         // work with rope
         if (this.keyInputsComp.isKeyPressed(this.release_rope_key)) {
-            if (this.ropeMatter) {
-                this.releaseRope(playerMatter);
+            if (ropeExists) {
+                this.releaseRope(this.player);
+                ropeExists = false
             }
         } else if (this.keyInputsComp.isKeyPressed(this.shoot_rope_key)) {
-            if (this.ropeMatter) {
-                this.ropeMovement(delta)
+            if (ropeExists) {
+                this.playerMovement(delta)
             }
             else {
-              //  this.rope = new Rope(this.binder, this.player)
-              this.createRope(playerMatter)
+                this.rope = new Rope(this.binder, this.player)
             }
         }
-
-        if (this.ropeMatter && this.ropeMatter.body.isStatic == false) {
-            Matter.Events.on(this.binder.mEngine, 'collisionStart', (event: any) => {
-                this.ropeCreateConstraint(event);
-            });
+        if (ropeExists) {
+            if (this.rope.isRopeEndStatic()) {
+                this.shortenRopeLength(this.player)
+            }
         }
-        else if (this.ropeMatter && this.ropeMatter.body.isStatic == true) {
-            this.ropeShorterLength(playerMatter)
-        }
+        Matter.Events.on(this.binder.mEngine, 'collisionStart', (event: any) => {
+            this.checkCollissions(event);
+        });
     }
 
-    private releaseRope(playerMatter: PixiMatter.MatterBody) {
+    public releaseRope(player: Player) {
         // předám rychlost
-        if (this.ropeMatter.body.isStatic == true) {
-            let playerSpeed = this.player.speed
-            Matter.Body.setVelocity(playerMatter.body, {
-                x: (playerSpeed) * Math.cos(this.releasedRopeAngle),
-                y: (playerSpeed) * Math.sin(this.releasedRopeAngle)
+
+        if (this.rope.isRopeEndStatic() == true) {
+            let playerSpeed = player.speed
+            let releasedRopeAngle = this.rope.releasedRopeAngle
+            Matter.Body.setVelocity(player.playerMatter.body, {
+                x: (playerSpeed) * Math.cos(releasedRopeAngle),
+                y: (playerSpeed) * Math.sin(releasedRopeAngle)
             })
-            Matter.World.remove(this.binder.mWorld, this.ropeConstraint.constraint)
-            this.ropeConstraint.destroy()
-            this.ropeConstraint = null
+            this.rope.destroyRopeString()
         }
         // remove constraint and ropeEnd
-        Matter.World.remove(this.binder.mWorld, this.ropeMatter.body)
-        this.ropeMatter.destroy()
-        this.ropeMatter = null
+        this.rope.destroyRope()
+        this.rope = null
+    }
+
+    public shortenRopeLength(player: Player) {
+        let ropeLength = this.rope.getRopeLength() - player.speed
+        if (ropeLength > PLAYER_HEIGHT) {
+            this.rope.setRopeLength(ropeLength)
+        }
+        else {
+            this.releaseRope(player)
+        }
     }
 
     // rope speed is actualized here (with delta)
-    private ropeMovement(delta: number) {
+    public playerMovement(delta: number) {
         let playerSpeed = this.player.speed
         // rope shorten length
-        if (this.ropeConstraint) {
+        if (this.rope.ropeStringExists()) {
             this.player.speed = playerSpeed + (this.ropeSpeedIncrease * delta)
         }
         // rope end set movement
         else {
             let newSpeed = playerSpeed + (this.ropeSpeedIncrease * delta)
-            Matter.Body.setVelocity(this.ropeMatter.body,
+            let ropeMatter = this.rope.ropeMatter
+            Matter.Body.setVelocity(ropeMatter.body,
                 {
-                    x: (newSpeed) * Math.cos(this.releasedRopeAngle),
-                    y: (newSpeed) * Math.sin(this.releasedRopeAngle)
+                    x: (newSpeed) * Math.cos(this.rope.releasedRopeAngle),
+                    y: (newSpeed) * Math.sin(this.rope.releasedRopeAngle)
                 }
             )
             this.player.speed = newSpeed
         }
     }
 
-    private ropeShorterLength(playerMatter: PixiMatter.MatterBody) {
-        let ropeLength = this.ropeConstraint.constraint.length - this.player.speed
-        if (ropeLength > PLAYER_HEIGHT) {
-            this.ropeConstraint.constraint.length = ropeLength
-        }
-        else {
-            this.releaseRope(playerMatter)
-        }
-    }
-
     // name: String, pairs : any,  source : any
-    private ropeCreateConstraint = (event: any) => {
+    private checkCollissions = (event: any) => {
         let pairs = event.pairs;
         for (let pair of pairs) {
-            let ropeCollision = (pair.bodyA.label == this.ropeLabel || pair.bodyB.label == this.ropeLabel)
-            // only players components have labels
-            if (ropeCollision == true) {
-                // TODO: nesmí se chytit za soupeře (second label nebude mít P něco id, nebo  rope)
 
-                let secondPoint = (pair.bodyA.label == this.ropeLabel) ? pair.bodyB : pair.bodyA
-                Matter.Body.setStatic(this.ropeMatter.body, true);
-
-                this.player.speed = INIT_PLAYER_SPEED
-
-                // rope constraint
-                if (this.ropeConstraint == null) {
-                    this.ropeConstraint = this.binder.addConstraint(Matter.Constraint.create({
-                        bodyA: this.ropeMatter.body,
-                        bodyB: this.player.playerMatter.body,
-                        type: 'pin'
-                    })) as PixiMatter.MatterConstraint
+            if (this.rope?.isRopeEndStatic() == false) {
+                let isRopeEndCollision = this.pairContainsLabel(pair, this.rope.ropeLabel)
+                if (isRopeEndCollision == true) {
+                    let secondPoint = this.pairGetSecondPoint(pair, this.rope.ropeLabel)
+                    // nesmí se chytit za soupeře
+                    if(secondPoint.label == Players_id.P1 ||
+                       secondPoint.label == Players_id.P2 ||
+                       secondPoint.label == P1_ROPE ||
+                       secondPoint.label == P2_ROPE )
+                    {
+                        continue;
+                    }
+                    this.rope.ropeEndcollission(this.player)
                 }
-                /*              TODO: reagovat podle toho, jaký je to constraint. např ubírat životy...
-
-                                switch (secondLabel) {
-                                    case 'reset':
-                                        break;
-                                    case 'bumper':
-                                        //  pingBumper(pair.bodyA);
-                                        break;
-                                }
-                                */
             }
+            let isfinishCollision = (this.pairContainsLabel(pair, this.player.id) && this.pairContainsLabel(pair, FINISH_LABEL) )
+            if(isfinishCollision && this.finishMessageSend== false){
+                this.finishMessageSend = true
+                this.sendMessage(Messages.FINISH_MESSAGE, this.player)
+            }
+         //   let isPlayerObstacleCollision =
+
+
+
+         /*              TODO: reagovat podle toho, jaký je to constraint. např ubírat životy...
+
+            switch (secondLabel) {
+                case 'reset':
+                    break;
+                case 'bumper':
+                    //  pingBumper(pair.bodyA);
+                    break;
+            }
+            */
         }
+        // only players components have labels
+
     }
-
-    // method to fire the rope
-    createRope(playerMatter: PixiMatter.MatterBody) {
-        let angle = playerMatter.body.angle
-        let rope = this.binder.addBody(Matter.Bodies.rectangle(playerMatter.position.x + (1.5 * PLAYER_HEIGHT) * Math.cos(angle), playerMatter.y + (1.5 * PLAYER_HEIGHT) * Math.sin(angle), 10, 10,
-            {
-                frictionAir: 0
-            })) as PixiMatter.MatterBody
-
-        // set rope
-        this.ropeMatter = rope
-        this.releasedRopeAngle = angle
-        this.ropeMatter.body.label = this.ropeLabel
+    private pairContainsLabel(pair, wantedLabel): boolean {
+        return (pair.bodyA.label == wantedLabel || pair.bodyB.label == wantedLabel)
     }
-
+    private pairGetSecondPoint(pair, knownLabel) {
+        return (pair.bodyA.label == knownLabel) ? pair.bodyB : pair.bodyA
+    }
 }
+
 

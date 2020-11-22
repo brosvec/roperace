@@ -1,9 +1,10 @@
 import { Engine, Render, Bodies, World} from "matter-js";
 import * as PixiMatter from '../../libs/pixi-matter';
-import {BORDER_SIZE, GAME_WIDTH, GAME_HEIGHT,PLAYER_HEIGHT} from "../utils/constants";
+import {BORDER_SIZE, GAME_WIDTH, GAME_HEIGHT,PLAYER_HEIGHT, FINISH_LABEL, Assets} from "../utils/constants";
 import * as ECS from '../../libs/pixi-ecs';
 import {PlayerController} from "../Components/playerController";
 import {Player} from "../Model/player";
+
 
 
 // todo: fill whole screen and resize with screen
@@ -42,12 +43,14 @@ export class LevelFactory {
         binder.addBody(Bodies.rectangle(300, 350, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
         binder.addBody(Bodies.rectangle(300, 520, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
 
-        this.createFinish(new ECS.Vector(200,400),binder)
+        // 200,400
+        this.createFinish(new ECS.Vector(100,100),binder)
     }
 
     private createFinish(position : ECS.Vector,binder: PixiMatter.MatterBind){
-        binder.addBody(Bodies.rectangle(position.x,position.y,20,25,{
-            isStatic: true
+        let finish = binder.addBody(Bodies.rectangle(position.x,position.y,20,25,{
+            isStatic: true,
+            label: FINISH_LABEL
         }))
     }
 
@@ -67,19 +70,31 @@ export class LevelFactory {
         let startPositionX = startVector.x
 
         let playerHeight = PLAYER_HEIGHT
-        let players = []
+        let players: Array<Player> = new Array()
         // Create two boxes and a ground
         for (let i = 1; i <= numberOfPlayers; i++ )
         {
-            // TODO: to player Model
             let playerBody = binder.addBody(Bodies.rectangle(startPositionX, startPositionY + i*playerHeight, playerHeight, playerHeight,{
                 frictionAir: 0,
                 restitution: 0.5
-            }))
+                }
+            ))
             let player = new Player(i)
             playerBody.addComponent(new PlayerController(binder,player))
+
+            player.playerMatter = playerBody as PixiMatter.MatterBody
+            players.push(player)
+
+
+          let picture = PIXI.Texture.from(Assets.P1_AVATAR)
+
+          new ECS.Builder(this.scene)
+            .asSprite(picture)
+            .localPos(playerBody.position.x,playerBody.position.y)
+            .withParent(playerBody)
+            .build();
         }
-       // return players;
+       return players;
     }
 
 }
