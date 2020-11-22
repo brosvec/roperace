@@ -1,8 +1,12 @@
 import * as ECS from '../libs/pixi-ecs';
 import * as PIXI from 'pixi.js';
+import {GameLoop} from './Components/gameLoop';
+import {GAME_WIDTH,GAME_HEIGHT} from "./utils/constants";
+import {LevelFactory} from "./Factories/levelFactory";
 
-// TODO rename your game
-class MyGame {
+
+
+class RopeRace {
 	engine: ECS.Engine;
 
 	constructor() {
@@ -12,8 +16,8 @@ class MyGame {
 		// init the game loop
 		this.engine.init(canvas, {
 			resizeToScreen: true,
-			width: 800,
-			height: 600,
+			width: GAME_WIDTH,
+			height: GAME_HEIGHT,
 			resolution: 1,
 			flagsSearchEnabled: false, // searching by flags feature
 			statesSearchEnabled: false, // searching by states feature
@@ -23,8 +27,9 @@ class MyGame {
 			notifyStateChanges: false, // will send message if states change
 			notifyFlagChanges: false, // will send message if flags change
 			notifyTagChanges: false, // will send message if tags change
-			debugEnabled: false // debugging window
+			debugEnabled: true // debugging window
 		});
+
 
 		this.engine.app.loader
 			.reset()
@@ -35,15 +40,14 @@ class MyGame {
 	onAssetsLoaded() {
 		// init the scene and run your game
 		let scene = this.engine.scene;
-		new ECS.Builder(scene)
-			.localPos(this.engine.app.screen.width / 2, this.engine.app.screen.height / 2)
-			.anchor(0.5)
-			.withParent(scene.stage)
-			.withComponent(new ECS.FuncComponent('rotation').doOnUpdate((cmp, delta, absolute) => cmp.owner.rotation += 0.001 * delta))
-			.asText('\u0047\u004F\u004F\u0044 \u004C\u0055\u0043\u004B\u0021', new PIXI.TextStyle({ fill: '#FF0000', fontSize: 80, fontFamily: 'Courier New' }))
-			.build();
+
+		this.engine.scene.addGlobalComponent(new ECS.KeyInputComponent());
+		//this.engine.scene.addGlobalComponent(SoundComponent());
+		this.engine.scene.addGlobalComponent(new GameLoop());
+		//this.engine.scene.addGlobalComponent(gameManager);
 	}
+
 }
 
 // this will create a new instance as soon as this file is loaded
-export default new MyGame();
+export default new RopeRace();

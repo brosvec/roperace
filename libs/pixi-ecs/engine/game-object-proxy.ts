@@ -318,7 +318,7 @@ export default class GameObjectProxy {
 	 */
 	onChildDestroyed(object: GameObjectProxy) {
 		object.destroy();
-	}
+	}d
 
 	update(delta: number, absolute: number) {
 		// initialize all components from the previous loop
@@ -329,7 +329,7 @@ export default class GameObjectProxy {
 		for (let [, cmp] of this.components) {
 			if (cmp._cmpState === ComponentState.RUNNING) {
 				cmp.onUpdate(delta, absolute);
-				
+
 				// handle fixed update
 				if (cmp.fixedFrequency && ((absolute - cmp._lastFixedUpdate) >= 1000 / cmp.fixedFrequency)) { // fixed update
 					let delta = cmp._lastFixedUpdate === 0 ? 1000 / cmp.fixedFrequency : (absolute - cmp._lastFixedUpdate);

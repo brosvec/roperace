@@ -18,6 +18,9 @@
     "lint": "eslint ./src ./libs --ext .js,.jsx,.ts,.tsx"
   },
   "dependencies": {
+    "@types/matter-js": "^0.14.5",
+    "ba": "0.0.5",
+    "matter-js": "^0.14.2",
     "pixi-sound": "^3.0.5",
     "pixi.js": "^5.3.3",
     "reveal.js": "^4.0.2",
