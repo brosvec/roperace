@@ -2,12 +2,13 @@ import * as ECS from '../pixi-ecs';
 import * as Math from '../aph-math';
 import * as Matter from 'matter-js';
 import { MatterBody } from './matter-body';
-import {MatterConstraint} from './matter-constraint';
+import { MatterConstraint } from './matter-constraint';
 
 export type MatterBindConfig = {
 	mouseControl?: boolean,
 	renderConstraints?: boolean,
 	renderAngles?: boolean,
+	wireframes?: boolean,
 }
 
 /**
@@ -25,24 +26,24 @@ export class MatterBind {
 		this.mEngine = Matter.Engine.create();
 		this.mWorld = this.mEngine.world;
 		this.scene = scene;
-	
+
 		this.config = {
 			mouseControl: true,
 			renderConstraints: true,
 			renderAngles: true,
 			...config
 		}
-
+		
 		// create runner
 		this.runner = Matter.Runner.create(null);
 
 		// add a new PIXI object when given event is invoked
 		Matter.Events.on(this.mWorld, 'afterAdd', (event: any) => {
 			this.addNewObject(event, scene);
-        });
+		});
 
 		// add mouse control
-		if(this.config.mouseControl) {
+		if (this.config.mouseControl) {
 			let mouse = Matter.Mouse.create(scene.app.view),
 				mouseConstraint = Matter.MouseConstraint.create(this.mEngine, {
 					mouse: mouse
@@ -89,12 +90,12 @@ export class MatterBind {
 	protected addNewObject(newObj: any, scene: ECS.Scene) {
 		if (newObj.type === 'body') {
 			// single body
-			scene.stage.addChild(new MatterBody('matter_body_' + newObj.id, newObj, 
-			this.mWorld, { showAngleIndicator: this.config.renderAngles }));
+			scene.stage.addChild(new MatterBody('matter_body_' + newObj.id, newObj,
+				this.mWorld, { showAngleIndicator: this.config.renderAngles }));
 		} else if (newObj.type === 'constraint' && this.config.renderConstraints) {
 			// single constraint
-			scene.stage.addChild(new MatterConstraint('matter_constraint_' + newObj.id, newObj, 
-			this.mWorld));
+			scene.stage.addChild(new MatterConstraint('matter_constraint_' + newObj.id, newObj,
+				this.mWorld));
 		} else if (newObj.object) {
 			if (newObj.object.length) {
 				// collection of objects inside a composite
@@ -105,7 +106,7 @@ export class MatterBind {
 				if (newObj.object.body) {
 					// single object inside a composite
 					scene.stage.addChild(new MatterBody('matter_body_' + newObj.object.body.id, newObj.object.body,
-					 this.mWorld, { showAngleIndicator: this.config.renderAngles }));
+						this.mWorld, { showAngleIndicator: this.config.renderAngles }));
 				}
 
 				if (newObj.object.constraint && this.config.renderConstraints) {

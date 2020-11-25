@@ -40,6 +40,7 @@ class RopeRace {
 		this.engine.app.loader
 			.reset()
 			.add(Assets.P1_AVATAR, '../../assets/ghost.png')
+			.add(Assets.RESET_BTN, '../../assets/resetBtn.png')
 		//	.add(Assets.FINISH, '../assets/ghost.png')
 			.add(Assets.LEVEL_COMPLETE_SOUND, '../../assets/level_complete.mp3')
 			.load(() => this.onAssetsLoaded());
@@ -51,7 +52,7 @@ class RopeRace {
 
 		this.engine.scene.addGlobalComponent(new ECS.KeyInputComponent());
 		this.engine.scene.addGlobalComponent(new SoundComponent());
-		this.engine.scene.addGlobalComponent(new GameLoop());
+		this.engine.scene.addGlobalComponent(new GameLoop(1,1));
 		//this.engine.scene.addGlobalComponent(gameManager);
 	}
 

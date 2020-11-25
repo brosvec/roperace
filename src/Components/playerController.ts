@@ -39,9 +39,6 @@ export class PlayerController extends ECS.Component {
         const ownerMatter = this.owner as PixiMatter.MatterBody
         this.player.playerMatter = ownerMatter;
 
-        //const ownerMatter = this.owner as PixiMatter.MatterBody
-        ownerMatter.body.label = this.player.id
-
         if (this.player.playerNumber == 1) {
 
             this.turn_left_key = ControlKey.TURN_LEFT_P1
@@ -166,6 +163,15 @@ export class PlayerController extends ECS.Component {
                 this.finishMessageSend = true
                 this.sendMessage(Messages.FINISH_MESSAGE, this.player)
             }
+         //   isObstacleCollision = (this.pairContainsLabel(pair, this.player.id) &&  this.pairLabelContainsString(pair, FINISH_LABEL) )
+           /* let isObstacleCollision = true
+            if(isObstacleCollision){
+                // get obstacle
+                // update lives
+                this.player.lives = 10
+                //sendMessage
+                this.sendMessage(Messages.PLAYER_LIVES_CHANGED, this.player)
+            }*/
          //   let isPlayerObstacleCollision =
 
 

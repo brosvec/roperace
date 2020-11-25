@@ -18,17 +18,26 @@ export enum Players_id {
 }
 export enum Messages {
     FINISH_MESSAGE = "FINISH_MESSAGE",
-    PLAYER_DEATH = "PLAYER_DEATH"
+    PLAYER_DEATH = "PLAYER_DEATH",
+    PLAYER_LIVES_CHANGED = "PLAYER_LIVES_CHANGED"
 }
 
 export enum Assets {
     P1_AVATAR = "P1_AVATAR",
     FINISH = "FINISH",
-    LEVEL_COMPLETE_SOUND = "LEVEL_COMPLETE_SOUND"
+    LEVEL_COMPLETE_SOUND = "LEVEL_COMPLETE_SOUND",
+    RESET_BTN = "RESET_BTN"
 }
 
 export const P1_ROPE = "P1_ROPE"
 export const P2_ROPE = "P2_ROPE"
+
+
+export const P1_LIVES_TEXT = "P1_LIVES_TEXT"
+export const P2_LIVES_TEXT = "P2_LIVES_TEXT"
+export const LEVEL_NUMBER_TEXT = "LEVEL_NUMBER_TEXT"
+export const LEVEL_TIME_TEXT = "LEVEL_TIME_TEXT"
+
 
 export const FINISH_LABEL = "FINISH_LABEL"
 
@@ -38,17 +47,11 @@ export const ROPE_SPEED_INCREASE = 0.01
 
 export const GAME_WIDTH = 800
 export const GAME_HEIGHT = 600
+export const BUTTON_HEIGHT = 30
 
+export const GAME_PANEL_HEIGHT = 75
 export const BORDER_SIZE = 20
 
 export const PLAYER_HEIGHT = 20
 export const ROTATE_COEFFICIENT = 0.005
 
-
-
-
-
-
-export enum Assets{
-
-}
