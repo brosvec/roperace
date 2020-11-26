@@ -1,10 +1,11 @@
 import * as Matter from "matter-js";
-import { MAP_TYPE_OCTILE } from "../../libs/aph-math";
 import * as ECS from '../../libs/pixi-ecs';
 import * as PixiMatter from '../../libs/pixi-matter';
 import { Player } from "../Model/player";
 import { Rope } from "../Model/rope";
-import { ControlKey, ROTATE_COEFFICIENT, INIT_PLAYER_SPEED, ROPE_SPEED_INCREASE, Players_id, PLAYER_HEIGHT, P1_ROPE, P2_ROPE, FINISH_LABEL,Messages } from "../utils/constants";
+import { Obstacle } from "../Model/obstacle";
+import {UtilFunctions} from '../Utils/utilFunctions';
+import { ControlKey, ROTATE_COEFFICIENT, Power_ups, INIT_PLAYER_SPEED, Obstacles, ROPE_SPEED_INCREASE, Players_id, PLAYER_HEIGHT, P1_ROPE, P2_ROPE, FINISH_LABEL, Messages, INIT_PLAYER_LIVE } from "../utils/constants";
 
 
 // collission example:  https://codepen.io/lonekorean/pen/KXLrVX
@@ -19,11 +20,13 @@ export class PlayerController extends ECS.Component {
     private binder: PixiMatter.MatterBind
 
     private player: Player
+    private lastSendLives: number = INIT_PLAYER_LIVE
 
     private rope: Rope = null
     private ropeSpeedIncrease: number = ROPE_SPEED_INCREASE
 
     private finishMessageSend: boolean = false
+    private playerKilledMessageSend: boolean = false
 
 
 
@@ -86,7 +89,7 @@ export class PlayerController extends ECS.Component {
             }
         }
         Matter.Events.on(this.binder.mEngine, 'collisionStart', (event: any) => {
-            this.checkCollissions(event);
+            this.checkCollissions(event, delta);
         });
     }
 
@@ -139,62 +142,75 @@ export class PlayerController extends ECS.Component {
     }
 
     // name: String, pairs : any,  source : any
-    private checkCollissions = (event: any) => {
+    private checkCollissions = (event: any, delta: number) => {
         let pairs = event.pairs;
         for (let pair of pairs) {
-
+            if (this.playerKilledMessageSend == true) {
+                return;
+            }
             if (this.rope?.isRopeEndStatic() == false) {
-                let isRopeEndCollision = this.pairContainsLabel(pair, this.rope.ropeLabel)
+                let isRopeEndCollision = UtilFunctions.pairContainsLabel(pair, this.rope.ropeLabel)
                 if (isRopeEndCollision == true) {
-                    let secondPoint = this.pairGetSecondPoint(pair, this.rope.ropeLabel)
+                    let secondPoint = UtilFunctions.pairGetSecondPoint(pair, this.rope.ropeLabel)
                     // nesmí se chytit za soupeře
-                    if(secondPoint.label == Players_id.P1 ||
-                       secondPoint.label == Players_id.P2 ||
-                       secondPoint.label == P1_ROPE ||
-                       secondPoint.label == P2_ROPE )
-                    {
+                    if (secondPoint.label == Players_id.P1 ||
+                        secondPoint.label == Players_id.P2 ||
+                        secondPoint.label == P1_ROPE ||
+                        secondPoint.label == P2_ROPE) {
                         continue;
                     }
                     this.rope.ropeEndcollission(this.player)
                 }
             }
-            let isfinishCollision = (this.pairContainsLabel(pair, this.player.id) && this.pairContainsLabel(pair, FINISH_LABEL) )
-            if(isfinishCollision && this.finishMessageSend== false){
+            // solve finish collision
+            let isfinishCollision = (UtilFunctions.pairContainsLabel(pair, this.player.id) && UtilFunctions.pairContainsLabel(pair, FINISH_LABEL))
+            if (isfinishCollision && this.finishMessageSend == false) {
                 this.finishMessageSend = true
                 this.sendMessage(Messages.FINISH_MESSAGE, this.player)
             }
-         //   isObstacleCollision = (this.pairContainsLabel(pair, this.player.id) &&  this.pairLabelContainsString(pair, FINISH_LABEL) )
-           /* let isObstacleCollision = true
-            if(isObstacleCollision){
-                // get obstacle
-                // update lives
-                this.player.lives = 10
-                //sendMessage
-                this.sendMessage(Messages.PLAYER_LIVES_CHANGED, this.player)
-            }*/
-         //   let isPlayerObstacleCollision =
+            // obstacle collission
+            let pairContainsPlayer = (UtilFunctions.pairContainsLabel(pair, this.player.id))
+            let isObstacleCollision = pairContainsPlayer && UtilFunctions.pairLabelStartsWithString(pair, Obstacles.OBSTACLE_BASE)
+            if (isObstacleCollision) {
+                let obstacle = (pair.bodyA.label == this.player.id) ? pair.bodyB : pair.bodyA
+                let player = (pair.bodyA.label == this.player.id) ? pair.bodyA : pair.bodyB
+                let speeds = player.speed + obstacle.speed
+                let obstacleDamage = Obstacle.getObstacleDamage(obstacle.label)
+                this.player.lives = this.player.lives - (speeds * obstacleDamage * delta)
 
-
-
-         /*              TODO: reagovat podle toho, jaký je to constraint. např ubírat životy...
-
-            switch (secondLabel) {
-                case 'reset':
-                    break;
-                case 'bumper':
-                    //  pingBumper(pair.bodyA);
-                    break;
+             /*   if (this.playerKilledMessageSend == true) {
+                    return;
+                } */
+                if (this.player.lives < 0) {
+                    this.playerKilledMessageSend = true
+                    this.sendMessage(Messages.PLAYER_DEATH, this.player)
+                    this.removePlayer();
+                }
+                if ((this.lastSendLives - this.player.lives) > 1) {
+                    this.lastSendLives = this.player.lives
+                    this.sendMessage(Messages.PLAYER_LIVES_CHANGED, this.player)
+                }
             }
-            */
+            // powerup collission
+            let isPowerUpCollission = pairContainsPlayer && UtilFunctions.pairLabelStartsWithString(pair, Power_ups.POWER_UP_BASE)
+            if (isPowerUpCollission) {
+                let powerUp = (pair.bodyA.label == this.player.id) ? pair.bodyB : pair.bodyA
+                let player = (pair.bodyA.label == this.player.id) ? pair.bodyA : pair.bodyB
+                // this.sendMessage()
+            }
         }
-        // only players components have labels
+    }
+    //private remove
 
-    }
-    private pairContainsLabel(pair, wantedLabel): boolean {
-        return (pair.bodyA.label == wantedLabel || pair.bodyB.label == wantedLabel)
-    }
-    private pairGetSecondPoint(pair, knownLabel) {
-        return (pair.bodyA.label == knownLabel) ? pair.bodyB : pair.bodyA
+    private removePlayer() {
+        if (this.rope) {
+            this.rope.destroyRope()
+            if (this.rope.ropeStringExists()) {
+                this.rope.destroyRopeString()
+            }
+        }
+        Matter.Composite.remove(this.binder.mWorld, this.player.playerMatter.body, true)
+        this.owner.destroy()
     }
 }
 

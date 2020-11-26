@@ -65,7 +65,6 @@ export class Rope {
      }
 
     public ropeEndcollission(player: Player){
-        // TODO: nesmí se chytit za soupeře (second label nebude mít P něco id, nebo  rope)
         let ropeMatter = this.ropeMatter
         let ropeConstraint = this.ropeConstraint
         Matter.Body.setStatic(ropeMatter.body, true);

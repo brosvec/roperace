@@ -41,6 +41,7 @@ class RopeRace {
 			.reset()
 			.add(Assets.P1_AVATAR, '../../assets/ghost.png')
 			.add(Assets.RESET_BTN, '../../assets/resetBtn.png')
+			.add(Assets.HEALTH_POWER_UP, '../../assets/health_powerup.png')
 		//	.add(Assets.FINISH, '../assets/ghost.png')
 			.add(Assets.LEVEL_COMPLETE_SOUND, '../../assets/level_complete.mp3')
 			.load(() => this.onAssetsLoaded());
@@ -50,9 +51,14 @@ class RopeRace {
 		// init the scene and run your game
 		let scene = this.engine.scene;
 
+		let url = new URL(location.href,location.origin)
+		let levelParam = url.searchParams.get('level');
+		let playersParam = url.searchParams.get('players');
+		let level = (levelParam) ? +levelParam : 1
+		let players = (playersParam) ? +playersParam : 1
 		this.engine.scene.addGlobalComponent(new ECS.KeyInputComponent());
 		this.engine.scene.addGlobalComponent(new SoundComponent());
-		this.engine.scene.addGlobalComponent(new GameLoop(1,1));
+		this.engine.scene.addGlobalComponent(new GameLoop(level,players));
 		//this.engine.scene.addGlobalComponent(gameManager);
 	}
 

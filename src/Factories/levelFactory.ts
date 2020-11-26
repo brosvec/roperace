@@ -1,11 +1,18 @@
-import { Engine, Render, Bodies, World } from "matter-js";
+import * as Matter from "matter-js";
 import * as PixiMatter from '../../libs/pixi-matter';
-import { BORDER_SIZE, GAME_WIDTH, BUTTON_HEIGHT, GAME_HEIGHT, PLAYER_HEIGHT, GAME_PANEL_HEIGHT, FINISH_LABEL, Assets, P1_LIVES_TEXT, P2_LIVES_TEXT, Players_id, LEVEL_NUMBER_TEXT, LEVEL_TIME_TEXT } from "../utils/constants";
+import { BORDER_SIZE, GAME_WIDTH, BUTTON_HEIGHT, GAME_HEIGHT,ROTATE_COEFFICIENT, MoveShapes, Obstacles, PLAYER_HEIGHT, GAME_PANEL_HEIGHT, FINISH_LABEL, Assets, P1_LIVES_TEXT, P2_LIVES_TEXT, Players_id, LEVEL_NUMBER_TEXT, LEVEL_TIME_TEXT } from "../utils/constants";
 import * as ECS from '../../libs/pixi-ecs';
 import { PlayerController } from "../Components/playerController";
 import { GamePanelComponent } from "../Components/gamePanelComponent";
 import { Player } from "../Model/player";
+import { Obstacle } from "../Model/obstacle";
+import { ObstacleFactory  } from "./obstacleFactory";
+import { PowerUpFactory  } from "./powerUpFactory";
 import * as PIXI from 'pixi.js';
+import { WanderComponent } from '../Components/steeringComponent';
+import { MoveInCircleComponent } from '../Components/moveInCircleComponent';
+import {UtilFunctions} from '../Utils/utilFunctions';
+
 
 
 
@@ -14,16 +21,34 @@ import * as PIXI from 'pixi.js';
 
 export class LevelFactory {
     private scene: ECS.Scene
-    constructor(scene: ECS.Scene) {
+    private binder: PixiMatter.MatterBind
+    private obstacleFactory : ObstacleFactory
+    private powerUpFactory : PowerUpFactory
+
+    constructor(scene: ECS.Scene, binder: PixiMatter.MatterBind) {
         this.scene = scene
+        this.binder = binder
+        this.obstacleFactory = new ObstacleFactory(scene,binder)
+        this.powerUpFactory = new PowerUpFactory(scene,binder)
     }
 
 
     private createWalls(binder: PixiMatter.MatterBind, screenWidth: number, screenHeight: number): void {
         // walls
-        binder.addBody(Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
-        binder.addBody(Bodies.rectangle(0, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
-        binder.addBody(Bodies.rectangle(screenWidth / 2, screenHeight, screenWidth, BORDER_SIZE, { isStatic: true }))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(0, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth / 2, screenHeight, screenWidth, BORDER_SIZE, { isStatic: true }))
+    }
+    private setObjectMoveAble(body : PixiMatter.MatterBody, moveShape :  MoveShapes){
+        // todo: moveable Obstacle
+        switch (moveShape) {
+            case MoveShapes.CIRCLE:
+                body.addComponent(new MoveInCircleComponent(ROTATE_COEFFICIENT))
+                break;
+            default:
+                // todo: wander?
+        }
     }
 
     public createLevel(levelNumber: number, binder: PixiMatter.MatterBind, screenWidth: number, screenHeight: number, numberOfPlayers: number): void {
@@ -41,16 +66,22 @@ export class LevelFactory {
     }
 
     private createLevel1(binder: PixiMatter.MatterBind): void {
-        binder.addBody(Bodies.rectangle(300, 180, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
-        binder.addBody(Bodies.rectangle(300, 350, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
-        binder.addBody(Bodies.rectangle(300, 520, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
+       this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 225, 700, 20, { isStatic: true, angle: Math.PI * 0.06}))
+
+       this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 350, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 520, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
+
+        let obstacle =  this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(250, 110, BORDER_SIZE, 80, { isStatic: false }))
+        this.setObjectMoveAble(obstacle, MoveShapes.CIRCLE)
 
         // 200,400
-        this.createFinish(new ECS.Vector(100, 100), binder)
+        this.createFinish(new ECS.Vector(100, 100))
+
+        this.powerUpFactory.generateRandomPowerUps(20);
     }
 
-    private createFinish(position: ECS.Vector, binder: PixiMatter.MatterBind) {
-        let finish = binder.addBody(Bodies.rectangle(position.x, position.y, 20, 25, {
+    private createFinish(position: ECS.Vector) {
+        let finish = this.binder.addBody(Matter.Bodies.rectangle(position.x, position.y, 20, 25, {
             isStatic: true,
             label: FINISH_LABEL
         }))
@@ -71,46 +102,44 @@ export class LevelFactory {
         let startPositionY = startVector.y
         let startPositionX = startVector.x
 
-        let playerHeight = PLAYER_HEIGHT
         let players: Array<Player> = new Array()
         // Create two boxes and a ground
         for (let i = 1; i <= numberOfPlayers; i++) {
-            let playerBody = binder.addBody(Bodies.rectangle(startPositionX, startPositionY + i * playerHeight, playerHeight, playerHeight, {
-                frictionAir: 0,
-                restitution: 0.5,
-                /*   render: {
-                      //visible: true,
-                      // strokeStyle: ,
-                      sprite: {
-                           texture : ,
-                           xScale : 1,
-                           yScale: 1} // new ECS.Sprite("bla",PIXI.Texture.from(Assets.P1_AVATAR))
-                   } */
-            }
-            ))
-            let player = new Player(i)
-            playerBody.addComponent(new PlayerController(binder, player))
-
-            player.playerMatter = playerBody as PixiMatter.MatterBody
-
-            player.playerMatter.body.label = player.id
-            players.push(player)
-
-            let textureStartPosition = this.getTexturePosition(playerBody.position, playerHeight, playerHeight)
-            let picture = PIXI.Texture.from(Assets.P1_AVATAR)
-            let playerObj = new ECS.Builder(this.scene)
-                .asSprite(picture)
-                .localPos(textureStartPosition.x, textureStartPosition.y)
-                .withParent(playerBody)
-                .build();
-            playerObj.width = playerHeight
-            playerObj.height = playerHeight
+            players.push(this.createPlayer(i, startPositionX, startPositionY))
         }
         return players;
     }
 
-    private getTexturePosition(objectCenterPosition: PIXI.ObservablePoint, height: number, width: number): ECS.Vector {
-        return new ECS.Vector(objectCenterPosition.x - (width / 2), objectCenterPosition.y - (height / 2))
+    private createPlayer(playerNumber: number, startPositionX: number, startPositionY: number): Player {
+        let player = new Player(playerNumber)
+        let playerBody = this.binder.addBody(Matter.Bodies.rectangle(startPositionX, startPositionY + playerNumber * PLAYER_HEIGHT, PLAYER_HEIGHT, PLAYER_HEIGHT, {
+            frictionAir: 0,
+            restitution: 0.5,
+            //   render: {
+                  //visible: true,
+                  // strokeStyle: ,
+             /*     sprite: {
+                       texture : '',
+                       xScale : 1,
+                       yScale: 1} // new ECS.Sprite("bla",PIXI.Texture.from(Assets.P1_AVATAR))
+               } */
+        }
+        ))
+        playerBody.addComponent(new PlayerController(this.binder, player))
+        player.playerMatter = playerBody as PixiMatter.MatterBody
+        player.playerMatter.body.label = player.id
+
+        let textureStartPosition = UtilFunctions.getTexturePosition(playerBody.position, PLAYER_HEIGHT, PLAYER_HEIGHT)
+        let picture = PIXI.Texture.from(Assets.P1_AVATAR)
+        let playerObj = new ECS.Builder(this.scene)
+            .asSprite(picture)
+            .localPos(textureStartPosition.x, textureStartPosition.y)
+            .withParent(playerBody)
+            .build();
+        playerObj.width = PLAYER_HEIGHT
+        playerObj.height = PLAYER_HEIGHT
+
+        return player
     }
 
     public createInfoPanel(binder: PixiMatter.MatterBind, screenWidth: number, screenHeight: number, numberOfPlayers: number, levelNumber: number): void {
@@ -123,8 +152,7 @@ export class LevelFactory {
             strokeThickness: 5
         });
 
-        let gameInfoPanel = binder.addBody(Bodies.rectangle(screenWidth / 2, 0, screenWidth, GAME_PANEL_HEIGHT, { isStatic: true }))
-        //  gameInfoPanel.addTag("GameInfoContainer")
+        let gameInfoPanel = binder.addBody(Matter.Bodies.rectangle(screenWidth / 2, 0, screenWidth, GAME_PANEL_HEIGHT, { isStatic: true }))
         let gapSpace = 10
         let panel = new ECS.Builder(this.scene)
             .localPos(0, 0)
@@ -132,10 +160,8 @@ export class LevelFactory {
             .withParent(this.scene.stage)
             .asContainer()
             .build();
-        //  gameInfoPanel.addTag("GameInfoContainer")
 
 
-        // P1_LIVES_TEXT, P1_NAME_TEXT
         for (let i = 1; i <= numberOfPlayers; i++) {
             let textName = (i == 1) ? P1_LIVES_TEXT : P2_LIVES_TEXT
             let startPositionX = (i == 1) ? 10 : 200
@@ -182,9 +208,8 @@ export class LevelFactory {
             .build()
 
 
-        let resetBtn = PIXI.Texture.from(Assets.P1_AVATAR)
+        let resetBtn = PIXI.Texture.from(Assets.RESET_BTN)
         let resetBtnObj = new ECS.Builder(this.scene)
-            //.asText("RESTART", restartStyle)
             .asSprite(resetBtn)
             .localPos(GAME_WIDTH - 50, GAME_PANEL_HEIGHT / 2 + gapSpace)
             .withParent(panel)
@@ -199,7 +224,6 @@ export class LevelFactory {
 
         let menuBtn = PIXI.Texture.from(Assets.P1_AVATAR)
         let menuBtnObj = new ECS.Builder(this.scene)
-            //.asText("RESTART", restartStyle)
             .asSprite(menuBtn)
             .localPos(resetBtnObj.position.x, resetBtnObj.position.y + gapSpace + BUTTON_HEIGHT)
             .withParent(panel)
@@ -211,48 +235,6 @@ export class LevelFactory {
         menuBtnObj.on('pointerdown', () => {
             this.showMenu(panel)
         });
-     //   this.showMenu(panel)
-
-        /*
-                new ECS.Builder(this.scene)
-                .localPos(90, 0)
-                .withParent(panel)
-                .asText("100 %", style)
-                .withName('bla')
-                .build()
-        */
-
-        /*
-                new ECS.Builder(this.scene)
-                    .localPos(0, 0)
-                    .withParent(gameInfoPanel)
-                    .asBitmapText("P1_LIVE", , 7, 0x00000)
-                    .build()
-        */
-        /*     new ECS.Builder(this.scene)
-                 .localPos(105, 9)
-                 .withParent(container)
-                 .asBitmapText(TextContainerType.TIME_MINS, "3", "nes_font_digits", 7, 0xFFFFFF)
-                 .build();
-
-             new ECS.Builder(this.scene)
-                 .localPos(120, 9)
-                 .withParent(container)
-                 .asBitmapText(TextContainerType.TIME_SECS, "00", "nes_font_digits", 7, 0xFFFFFF)
-                 .build();
-
-             new ECS.Builder(this.scene)
-                 .localPos(153, 9)
-                 .withParent(container)
-                 .asBitmapText(TextContainerType.LIVES, "3", "nes_font_digits", 7, 0xFFFFFF)
-                 .build();
-
-             new ECS.Builder(this.scene)
-                 .localPos(185, 9)
-                 .withParent(container)
-                 .asBitmapText(TextContainerType.HISCORE, "00000000", "nes_font_digits", 7, 0xFFFFFF)
-                 .build();
-                 */
     }
     private showMenu(panel: ECS.Container) {
         const style = new PIXI.TextStyle({
@@ -263,7 +245,7 @@ export class LevelFactory {
             strokeThickness: 5
         });
         //todo:  poskládat ze spritů - podle toho na který se klikne, tak se nastaví hodnota level, nebo počet hráčů
-        //
+
 
 
         let levelNumberTextWidth = new ECS.Builder(this.scene)
@@ -295,7 +277,6 @@ export class LevelFactory {
 
         let playBtn = PIXI.Texture.from(Assets.P1_AVATAR)
         let playBtnObj = new ECS.Builder(this.scene)
-            //.asText("RESTART", restartStyle)
             .asSprite(playBtn)
             .localPos(400, selectedLevel.position.y + 100 + BUTTON_HEIGHT)
             .withParent(panel)
@@ -305,18 +286,19 @@ export class LevelFactory {
         playBtnObj.interactive = true
         playBtnObj.buttonMode = true
         playBtnObj.on('pointerdown', () => {
-            // TODO: play
+            // load game with new parameters
             const level: ECS.Text = this.scene.findObjectByName("MENU_LEVEL") as ECS.Text;
-            const players: ECS.Text =  this.scene.findObjectByName("MENU_LEVEL") as ECS.Text;
-          let levelNumb = +level.text
-          let playersNumb = +players.text
-          
+            const players: ECS.Text = this.scene.findObjectByName("MENU_LEVEL") as ECS.Text;
+            let levelNumb = +level.text
+            let playersNumb = +players.text;
+
+            let url = new URL(location.href, location.origin)
+            url.searchParams.set('level', '1');
+            url.searchParams.set('players', '2');
+            location.href = url.href;
         });
 
-
-
     }
-
 }
 
 // this will create a new instance as soon as this file is loaded

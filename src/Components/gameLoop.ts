@@ -43,7 +43,7 @@ export class GameLoop extends ECS.Component {
 		Matter.Render.run(render);
 */
 
-        let levelFactory = new LevelFactory(scene);
+        let levelFactory = new LevelFactory(scene,binder);
         levelFactory.createLevel(this.levelNumber,binder, scene.width, scene.height, this.numberOfPlayers);
         // most of game loop features in playerController
         this.players = levelFactory.createPlayers(binder,this.levelNumber, this.numberOfPlayers, scene.width)
