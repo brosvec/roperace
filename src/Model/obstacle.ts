@@ -5,7 +5,7 @@ export class Obstacle {
     public static getObstacleDamage(obstacle_type : Obstacles) : number{
         switch (obstacle_type) {
             case Obstacles.OBSTACLE_WALL:
-                return 0.0001
+                return 0.10
             default:
                 break;
         }

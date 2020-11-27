@@ -12,33 +12,25 @@ export class ObstacleFactory {
         this.scene = scene
         this.binder = binder
     }
-    public createWallObstacle(wall: Matter.Body) : PixiMatter.MatterBody {
-        return this.createObstacle(wall,Assets.RESET_BTN,Obstacles.OBSTACLE_WALL)
+    public createWallObstacle(wall: Matter.Body,  spriteSize :ECS.Vector) : PixiMatter.MatterBody {
+        return this.createObstacle(wall,Assets.RESET_BTN,Obstacles.OBSTACLE_WALL, spriteSize)
     }
-    private createObstacle(obstacleBody: Matter.Body,asset :Assets,obstacleType :Obstacles) : PixiMatter.MatterBody {
-        Matter.Render
+    private createObstacle(obstacleBody: Matter.Body,asset :Assets,obstacleType :Obstacles, spriteSize :ECS.Vector) : PixiMatter.MatterBody {
         let obstacleContainer = this.binder.addBody(obstacleBody) as PixiMatter.MatterBody
 
 
-        // todo:
-        /*
-
-        obstacleContainer.rotation = obstacleContainer.body.angle
-        let a = obstacleContainer.rotation
-        let height = obstacleContainer.height
-        let width =  obstacleContainer.width
-
-        let textureStartPosition = UtilFunctions.getTexturePosition(obstacleContainer.position, height, width)
+       // let textureStartPosition = UtilFunctions.getTexturePosition(obstacleContainer.position, height, width)
+       // .localPos(textureStartPosition.x, textureStartPosition.y)
         let picture = PIXI.Texture.from(asset)
         let obstacleObj = new ECS.Builder(this.scene)
             .asSprite(picture)
-           // .asMesh(picture,obstacleBody.vertices)
-            .localPos(textureStartPosition.x, textureStartPosition.y)
+           .anchor(0.5,0.5)
             .withParent(obstacleContainer)
             .build();
-        obstacleObj.width = width
-        obstacleObj.height = height
-        */
+        obstacleObj.width = spriteSize.x
+        obstacleObj.height = spriteSize.y
+        obstacleObj.rotation = obstacleBody.angle
+
         obstacleBody.label = obstacleType
         return obstacleContainer
     }

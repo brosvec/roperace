@@ -1,6 +1,6 @@
 import * as Matter from "matter-js";
 import * as PixiMatter from '../../libs/pixi-matter';
-import { BORDER_SIZE, GAME_WIDTH, BUTTON_HEIGHT, GAME_HEIGHT,ROTATE_COEFFICIENT, MoveShapes, Obstacles, PLAYER_HEIGHT, GAME_PANEL_HEIGHT, FINISH_LABEL, Assets, P1_LIVES_TEXT, P2_LIVES_TEXT, Players_id, LEVEL_NUMBER_TEXT, LEVEL_TIME_TEXT } from "../utils/constants";
+import { BORDER_SIZE, LEVEL_1_POWER_UPS, GAME_WIDTH, BUTTON_HEIGHT, GAME_HEIGHT,ROTATE_COEFFICIENT, MoveShapes, Obstacles, PLAYER_HEIGHT, GAME_PANEL_HEIGHT, FINISH_LABEL, Assets, P1_LIVES_TEXT, P2_LIVES_TEXT, Players_id, LEVEL_NUMBER_TEXT, LEVEL_TIME_TEXT } from "../utils/constants";
 import * as ECS from '../../libs/pixi-ecs';
 import { PlayerController } from "../Components/playerController";
 import { GamePanelComponent } from "../Components/gamePanelComponent";
@@ -35,10 +35,10 @@ export class LevelFactory {
 
     private createWalls(binder: PixiMatter.MatterBind, screenWidth: number, screenHeight: number): void {
         // walls
-        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
-        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
-        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(0, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }))
-        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth / 2, screenHeight, screenWidth, BORDER_SIZE, { isStatic: true }))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }),new ECS.Vector(BORDER_SIZE, screenHeight))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }),new ECS.Vector(BORDER_SIZE, screenHeight))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(0, screenHeight / 2, BORDER_SIZE, screenHeight, { isStatic: true }),new ECS.Vector(BORDER_SIZE, screenHeight))
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(screenWidth / 2, screenHeight, screenWidth, BORDER_SIZE, { isStatic: true }),new ECS.Vector(screenWidth, BORDER_SIZE))
     }
     private setObjectMoveAble(body : PixiMatter.MatterBody, moveShape :  MoveShapes){
         // todo: moveable Obstacle
@@ -66,18 +66,18 @@ export class LevelFactory {
     }
 
     private createLevel1(binder: PixiMatter.MatterBind): void {
-       this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 225, 700, 20, { isStatic: true, angle: Math.PI * 0.06}))
+        let wallVector = new ECS.Vector(700,20)
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 225, 700, 20, { isStatic: true, angle: Math.PI * 0.06}),wallVector)
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 350, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }),wallVector)
+        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 520, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }),wallVector)
 
-       this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 350, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
-        this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(300, 520, 700, 20, { isStatic: true, angle: Math.PI * 0.06 }))
-
-        let obstacle =  this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(250, 110, BORDER_SIZE, 80, { isStatic: false }))
+        let obstacle =  this.obstacleFactory.createWallObstacle(Matter.Bodies.rectangle(250, 110, BORDER_SIZE, 80, { isStatic: false }),new ECS.Vector(BORDER_SIZE,80))
         this.setObjectMoveAble(obstacle, MoveShapes.CIRCLE)
 
         // 200,400
         this.createFinish(new ECS.Vector(100, 100))
 
-        this.powerUpFactory.generateRandomPowerUps(20);
+        this.powerUpFactory.generateRandomPowerUps(LEVEL_1_POWER_UPS);
     }
 
     private createFinish(position: ECS.Vector) {

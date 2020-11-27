@@ -72,3 +72,7 @@ export const BORDER_SIZE = 20
 export const PLAYER_HEIGHT = 20
 export const ROTATE_COEFFICIENT = 0.005
 
+export const LEVEL_1_POWER_UPS = 10
+
+export const ROPE_END_HEIGHT = 10
+

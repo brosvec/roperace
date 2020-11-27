@@ -33,7 +33,7 @@ export class MatterBind {
 			renderAngles: true,
 			...config
 		}
-		
+
 		// create runner
 		this.runner = Matter.Runner.create(null);
 
