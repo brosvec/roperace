@@ -13,15 +13,34 @@ export class ObstacleFactory {
         this.binder = binder
     }
     public createWallObstacle(wall: Matter.Body,  spriteSize :ECS.Vector) : PixiMatter.MatterBody {
-        return this.createObstacle(wall,Assets.RESET_BTN,Obstacles.OBSTACLE_WALL, spriteSize)
+        return this.createObstacleCropSprite(wall,Assets.WALL,Obstacles.OBSTACLE_WALL, spriteSize)
     }
-    private createObstacle(obstacleBody: Matter.Body,asset :Assets,obstacleType :Obstacles, spriteSize :ECS.Vector) : PixiMatter.MatterBody {
+    private createObstacleCropSprite(obstacleBody: Matter.Body,asset :Assets,obstacleType :Obstacles, spriteSize :ECS.Vector) : PixiMatter.MatterBody {
         let obstacleContainer = this.binder.addBody(obstacleBody) as PixiMatter.MatterBody
 
+        let picture = PIXI.Texture.from(asset);
+		picture = picture.clone();
+        picture.frame = new PIXI.Rectangle(0, 0, spriteSize.x, spriteSize.y);
 
-       // let textureStartPosition = UtilFunctions.getTexturePosition(obstacleContainer.position, height, width)
-       // .localPos(textureStartPosition.x, textureStartPosition.y)
-        let picture = PIXI.Texture.from(asset)
+        let obstacleObj = new ECS.Builder(this.scene)
+            .asSprite(picture)
+           .anchor(0.5,0.5)
+            .withParent(obstacleContainer)
+            .build();
+        obstacleObj.width = spriteSize.x
+        obstacleObj.height = spriteSize.y
+        obstacleObj.rotation = obstacleBody.angle
+
+        obstacleBody.label = obstacleType
+        return obstacleContainer
+    }
+    private createObstacleScaleSprite(obstacleBody: Matter.Body,asset :Assets,obstacleType :Obstacles, spriteSize :ECS.Vector) : PixiMatter.MatterBody {
+        let obstacleContainer = this.binder.addBody(obstacleBody) as PixiMatter.MatterBody
+
+        let picture = PIXI.Texture.from(asset);
+		picture = picture.clone();
+    //  picture.frame = new PIXI.Rectangle(0, 0, spriteSize.x, spriteSize.y);
+
         let obstacleObj = new ECS.Builder(this.scene)
             .asSprite(picture)
            .anchor(0.5,0.5)
@@ -37,5 +56,12 @@ export class ObstacleFactory {
 
     public createObstacleWithEdges() {
     }
+
+    private createTexture(offsetX: number, offsetY: number, width: number, height: number) {
+		let texture = PIXI.Texture.from('spritesheet');
+		texture = texture.clone();
+		texture.frame = new PIXI.Rectangle(offsetX, offsetY, width, height);
+		return texture;
+	}
 
 }

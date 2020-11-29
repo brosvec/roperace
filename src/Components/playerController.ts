@@ -5,10 +5,10 @@ import { Player } from "../Model/player";
 import { Rope } from "../Model/rope";
 import { Obstacle } from "../Model/obstacle";
 import { UtilFunctions } from '../Utils/utilFunctions';
-import { ControlKey, ROTATE_COEFFICIENT, Power_ups, INIT_PLAYER_SPEED, Obstacles, ROPE_SPEED_INCREASE, Players_id, PLAYER_HEIGHT, P1_ROPE, P2_ROPE, FINISH_LABEL, Messages, INIT_PLAYER_LIVE } from "../utils/constants";
+import { ControlKey, ROTATE_COEFFICIENT, Power_ups, POWER_UP_LENGTH,POWER_UP_FASTER_COEFFICIENT, INIT_PLAYER_SPEED, POWER_UP_FASTER_VALUE, POWER_UP_HEALTH_VALUE, Obstacles, ROPE_SPEED_INCREASE, Players_id, PLAYER_HEIGHT, P1_ROPE, P2_ROPE, FINISH_LABEL, Messages, INIT_PLAYER_LIVE } from "../utils/constants";
+import { MASK_TYPES } from "pixi.js";
 
 
-// collission example:  https://codepen.io/lonekorean/pen/KXLrVX
 
 export class PlayerController extends ECS.Component {
     private keyInputsComp: ECS.KeyInputComponent
@@ -28,6 +28,11 @@ export class PlayerController extends ECS.Component {
     private finishMessageSend: boolean = false
     private playerKilledMessageSend: boolean = false
 
+    private powerUpFasterActivated: boolean = false
+    private powerUpFasterActivatedTime: number
+    private powerUpShieldActivated : boolean = false
+    private powerUpShieldActivatedTime : number
+
 
 
     constructor(binder: PixiMatter.MatterBind, player: Player) {
@@ -41,6 +46,7 @@ export class PlayerController extends ECS.Component {
 
         const ownerMatter = this.owner as PixiMatter.MatterBody
         this.player.playerMatter = ownerMatter;
+
 
         if (this.player.playerNumber == 1) {
 
@@ -85,29 +91,50 @@ export class PlayerController extends ECS.Component {
             }
         }
         if (ropeExists) {
-            if (this.rope.isRopeEndStatic()) {
+            if (this.rope.isRopeEndHooked()) {
                 this.shortenRopeLength(this.player)
             }
         }
         let playerCollides = Matter.Query.collides(ownerMatter.body, this.binder.mWorld.bodies)
-        this.handlePlayerCollides(playerCollides, delta)
+        this.handlePlayerCollides(playerCollides, delta, absolute)
 
         if (this.playerKilledMessageSend == false && this.rope != null) {
             let ropeCollides = Matter.Query.collides(this.rope.ropeMatter.body, this.binder.mWorld.bodies)
             this.handlePlayerRopeCollissions(ropeCollides)
         }
+        // power UPS
+        this.powerUpEffects(absolute)
+        if (this.powerUpFasterActivated == true) {
+            this.player.speed = POWER_UP_FASTER_VALUE
+        }
     }
+    private powerUpEffects(absolute: number) {
+        // effects
+        if (this.powerUpFasterActivated == true) {
+            this.player.speed = POWER_UP_FASTER_VALUE
+        }
+
+        // deactivatePowerUps
+        if (this.powerUpFasterActivatedTime != null &&  absolute > (this.powerUpFasterActivatedTime + POWER_UP_LENGTH)) {
+            this.powerUpFasterActivated = false
+            this.powerUpFasterActivatedTime = null
+        }
+        if (this.powerUpShieldActivatedTime != null &&  absolute > (this.powerUpShieldActivatedTime + POWER_UP_LENGTH)) {
+            this.powerUpShieldActivated = false
+            this.powerUpShieldActivatedTime = null
+        }
+    }
+
 
     public releaseRope(player: Player) {
         // předám rychlost
-        if (this.rope.isRopeEndStatic() == true) {
+        if (this.rope.isRopeEndHooked() == true) {
             let playerSpeed = player.speed
             let releasedRopeAngle = this.rope.releasedRopeAngle
             Matter.Body.setVelocity(player.playerMatter.body, {
                 x: (playerSpeed) * Math.cos(releasedRopeAngle),
                 y: (playerSpeed) * Math.sin(releasedRopeAngle)
             })
-            this.rope.destroyRopeString()
         }
         // remove constraint and ropeEnd
         this.rope.destroyRope()
@@ -128,7 +155,7 @@ export class PlayerController extends ECS.Component {
     public playerMovement(delta: number) {
         let playerSpeed = this.player.speed
         // rope shorten length
-        if (this.rope.ropeStringExists()) {
+        if (this.rope.isRopeEndHooked()) {
             this.player.speed = playerSpeed + (this.ropeSpeedIncrease * delta)
         }
         // rope end set movement
@@ -145,9 +172,9 @@ export class PlayerController extends ECS.Component {
         }
     }
 
-    private handlePlayerCollides(pairs: any, delta: number) {
+    private handlePlayerCollides(pairs: any, delta: number, absolute: number) {
         for (let pair of pairs) {
-            if (this.playerKilledMessageSend == true) {
+            if(this.playerKilledMessageSend == true){
                 return;
             }
             // solve finish collision
@@ -159,6 +186,10 @@ export class PlayerController extends ECS.Component {
             // obstacle collission
             let isObstacleCollision = UtilFunctions.pairLabelStartsWithString(pair, Obstacles.OBSTACLE_BASE)
             if (isObstacleCollision) {
+                // if player has shield do not change lives
+                if(this.powerUpShieldActivated == true){
+                    continue;
+                }
                 let obstacle = (pair.bodyA.label == this.player.id) ? pair.bodyB : pair.bodyA
                 let player = (pair.bodyA.label == this.player.id) ? pair.bodyA : pair.bodyB
                 let speeds = player.speed + obstacle.speed
@@ -177,16 +208,40 @@ export class PlayerController extends ECS.Component {
             // powerup collission
             let isPowerUpCollission = UtilFunctions.pairLabelStartsWithString(pair, Power_ups.POWER_UP_BASE)
             if (isPowerUpCollission) {
-                let powerUp = (pair.bodyA.label == this.player.id) ? pair.bodyB : pair.bodyA
-                let player = (pair.bodyA.label == this.player.id) ? pair.bodyA : pair.bodyB
+                let powerUp = (pair.bodyA.label == this.player.id) ? pair.bodyB : pair.bodyA as Matter.Body
+                let player = (pair.bodyA.label == this.player.id) ? pair.bodyA : pair.bodyB as Matter.Body
+                this.removePowerUp(powerUp)
+                // TODO: find component by message
+                // this.sendMessage(,powerUp. ,)
+                this.handlePlayerPowerUpCollission(powerUp, absolute)
                 // this.sendMessage()
             }
         }
     }
+    private handlePlayerPowerUpCollission(powerUp: Matter.Body, absolute: number) {
+        //  let powerUpObject = this.binder.findSyncObjectForBody(powerUp)
+        switch (powerUp.label) {
+            case Power_ups.POWER_UP_HEALTH:
+                this.player.lives = Math.min((this.player.lives + POWER_UP_HEALTH_VALUE), INIT_PLAYER_LIVE)
+                this.sendMessage(Messages.PLAYER_LIVES_CHANGED, this.player)
+                break;
+            case Power_ups.POWER_UP_FASTER:
+                this.powerUpFasterActivated = true
+                this.powerUpFasterActivatedTime = absolute
+                break;
+            case Power_ups.POWER_UP_SHIELD:
+                this.powerUpShieldActivated = true
+                this.powerUpShieldActivatedTime = absolute
+                break;
+            default:
+                break;
+        }
+
+    }
 
     private handlePlayerRopeCollissions(pairs: any) {
         for (let pair of pairs) {
-            if (this.rope?.isRopeEndStatic() == false) {
+            if (this.rope?.isRopeEndHooked() == false) {
                 let secondPoint = UtilFunctions.pairGetSecondPoint(pair, this.rope.ropeLabel)
                 // nesmí se chytit za soupeře
                 if (secondPoint.label == Players_id.P1 ||
@@ -196,8 +251,8 @@ export class PlayerController extends ECS.Component {
                     continue;
                 }
                 //
-                let pointForBodyB = new ECS.Vector(pair.supports[0].x-secondPoint.position.x, pair.supports[0].y-secondPoint.position.y)
-                this.rope.ropeEndcollission(this.player, pointForBodyB,secondPoint)
+                let pointForBodyB = new ECS.Vector(pair.supports[0].x - secondPoint.position.x, pair.supports[0].y - secondPoint.position.y)
+                this.rope.ropeEndcollission(this.player, pointForBodyB, secondPoint)
             }
         }
     }
@@ -205,13 +260,16 @@ export class PlayerController extends ECS.Component {
     private removePlayer() {
         if (this.rope) {
             this.rope.destroyRope()
-            if (this.rope.ropeStringExists()) {
-                this.rope.destroyRopeString()
-            }
         }
         Matter.Composite.remove(this.binder.mWorld, this.player.playerMatter.body, true)
         this.owner.destroy()
+    }l
+    private removePowerUp(powerUp : Matter.Body ) {
+        let powerUpObj = this.binder.findSyncObjectForBody(powerUp)
+        Matter.Composite.remove(this.binder.mWorld, powerUp, true)
+        powerUpObj.destroy()
     }
+
 }
 
 

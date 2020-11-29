@@ -9,8 +9,8 @@ export enum ControlKey {
 
     TURN_LEFT_P2 = ECS.Keys.KEY_LEFT,
     TURN_RIGHT_P2 = ECS.Keys.KEY_RIGHT,
-    SHOOT_ROPE_P2 = ECS.Keys.KEY_N,
-    RELEASE_ROPE_P2 = ECS.Keys.KEY_M,
+    SHOOT_ROPE_P2 = ECS.Keys.KEY_K,
+    RELEASE_ROPE_P2 = ECS.Keys.KEY_L,
 }
 export enum Players_id {
     P1 = "P1",
@@ -24,10 +24,27 @@ export enum Messages {
 
 export enum Assets {
     P1_AVATAR = "P1_AVATAR",
+    P2_AVATAR = "P2_AVATAR",
     FINISH = "FINISH",
     LEVEL_COMPLETE_SOUND = "LEVEL_COMPLETE_SOUND",
     RESET_BTN = "RESET_BTN",
-    HEALTH_POWER_UP = "HEALTH_POWER_UP",
+    SETTINGS_BTN = "SETTINGS_BTN",
+    WALL = "WALL",
+    BACKGROUND = "BACKGROUND",
+    PLAYER_1_WON = "PLAYER_1_WON",
+    PLAYER_2_WON = "PLAYER_2_WON",
+    GAME_OVER = "GAME_OVER",
+    GAME_PANEL = "GAME_PANEL",
+    ICON_DICE = "ICON_DICE",
+    ICON_PLUS = "ICON_PLUS",
+    ICON_MINUS = "ICON_MINUS",
+    MENU = "MENU",
+    PLAY_BTN = "PLAY_BTN",
+    FIRST_AID_PU = "FIRST_AID",
+    FASTER_PU = "FASTER_PU",
+    SHIELD_PU = "SHIELD_PU",
+    SPRING_PU = "SPRING_PU",
+    FONT_JOYSTIX = "FONT_JOYSTIX"
 }
 
 export const P1_ROPE = "P1_ROPE"
@@ -47,6 +64,8 @@ export enum Obstacles {
 
 export enum Power_ups {
     POWER_UP_HEALTH = "POWER_UP_HEALTH",
+    POWER_UP_SHIELD = "POWER_UP_SHIELD",
+    POWER_UP_FASTER = "POWER_UP_FASTER",
     POWER_UP_BASE = "POWER_UP_"
 }
 
@@ -54,6 +73,12 @@ export enum MoveShapes {
     CIRCLE = "CIRCLE",
     WANDER = "WANDER"
 }
+
+export const POWER_UP_HEALTH_VALUE = 50
+export const POWER_UP_FASTER_COEFFICIENT = 20
+export const POWER_UP_FASTER_VALUE = 0.75
+export const POWER_UP_LENGTH = 5000
+
 
 
 export const FINISH_LABEL = "FINISH_LABEL"
@@ -66,13 +91,21 @@ export const GAME_WIDTH = 800
 export const GAME_HEIGHT = 600
 export const BUTTON_HEIGHT = 30
 
-export const GAME_PANEL_HEIGHT = 75
-export const BORDER_SIZE = 20
+export const GAME_PANEL_HEIGHT = 90
+export const BORDER_SIZE = 50
 
 export const PLAYER_HEIGHT = 20
+export const FINISH_HEIGHT = 30
+export const PLAYER_WIDTH = 20
+
 export const ROTATE_COEFFICIENT = 0.005
 
 export const LEVEL_1_POWER_UPS = 10
 
 export const ROPE_END_HEIGHT = 10
+
+export const ROPE_OPTIONS = {
+    strokeStyle: '0xF0F0F0',
+    lineWidth: 1
+}
 
