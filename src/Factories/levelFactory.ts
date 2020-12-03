@@ -1,6 +1,6 @@
 import * as Matter from "matter-js";
 import * as PixiMatter from '../../libs/pixi-matter';
-import { BORDER_SIZE, LEVEL_1_POWER_UPS, GAME_WIDTH, BUTTON_HEIGHT,FINISH_HEIGHT, PLAYER_WIDTH, GAME_HEIGHT, ROTATE_COEFFICIENT, MoveShapes, Obstacles, PLAYER_HEIGHT, GAME_PANEL_HEIGHT, FINISH_LABEL, Assets, P1_LIVES_TEXT, P2_LIVES_TEXT, Players_id, LEVEL_NUMBER_TEXT, LEVEL_TIME_TEXT } from "../utils/constants";
+import { BORDER_SIZE, LEVEL_1_POWER_UPS, GAME_WIDTH, BUTTON_HEIGHT, FINISH_HEIGHT, PLAYER_WIDTH, GAME_HEIGHT, ROTATE_COEFFICIENT, MoveShapes, Obstacles, PLAYER_HEIGHT, GAME_PANEL_HEIGHT, FINISH_LABEL, Assets, P1_LIVES_TEXT, P2_LIVES_TEXT, Players_id, LEVEL_NUMBER_TEXT, LEVEL_TIME_TEXT } from "../utils/constants";
 import * as ECS from '../../libs/pixi-ecs';
 import { PlayerController } from "../Components/playerController";
 import { GamePanelComponent } from "../Components/gamePanelComponent";
@@ -103,7 +103,7 @@ export class LevelFactory {
         }))
         let obstacleObj = new ECS.Builder(this.scene)
             .asSprite(PIXI.Texture.from(Assets.FINISH))
-           .anchor(0.5,0.5)
+            .anchor(0.5, 0.5)
             .withParent(finish)
             .build();
 
@@ -171,14 +171,21 @@ export class LevelFactory {
 
 
         const style = new PIXI.TextStyle({
-            fontFamily: 'Arial',
+            fontFamily: 'joystix_monospace',
             fontSize: 20,
-            fill: '#FF5733',
+            fill: "#f7f7f7",
             // stroke: '#FF5733',
-            strokeThickness: 5
+          //  strokeThickness: 5
         });
 
+        let rectangle = new PIXI.Graphics();
+        rectangle.beginFill(0x000000);
+        rectangle.drawRect(0, 0, GAME_WIDTH, GAME_PANEL_HEIGHT / 2);
+        rectangle.endFill();
+        this.scene.stage.addChild(rectangle);
+
         let gameInfoPanel = binder.addBody(Matter.Bodies.rectangle(screenWidth / 2, 0, screenWidth, GAME_PANEL_HEIGHT, { isStatic: true }))
+
         let gapSpace = 10
         let panel = new ECS.Builder(this.scene)
             .localPos(0, 0)
@@ -187,18 +194,11 @@ export class LevelFactory {
             .asContainer()
             .build();
 
-        /*
-            let gamePanel = PIXI.Texture.from(Assets.GAME_PANEL)
-            let gamePanelObj = new ECS.Builder(this.scene)
-                .asSprite(gamePanel)
-                .localPos(0, 0)
-                .withParent(this.scene.stage)
-                .build();
-        */
+
 
         for (let i = 1; i <= numberOfPlayers; i++) {
             let textName = (i == 1) ? P1_LIVES_TEXT : P2_LIVES_TEXT
-            let startPositionX = (i == 1) ? 10 : 200
+            let startPositionX = (i == 1) ? 10 : GAME_WIDTH - 200
             let width = new ECS.Builder(this.scene)
                 .localPos(startPositionX, 0)
                 .withParent(panel)
@@ -213,31 +213,32 @@ export class LevelFactory {
                 .build()
         }
 
-        let levelNumberStartPositionx = GAME_WIDTH - 350
+        let secondRow = 15
+        let levelNumberStartPositionx = GAME_WIDTH / 2 - 150
         let levelNumberTextWidth = new ECS.Builder(this.scene)
-            .localPos(levelNumberStartPositionx, 0)
+            .localPos(levelNumberStartPositionx, secondRow)
             .withParent(panel)
            // .asBitmapText("Level number :", "JoystixMonospace-Regular", 7, 0xFFFFFF)
-           // .asBitmapText("3", "nes_font_digits", 7, 0xFFFFFF)
-            .asText("Level number :", style)
+           // .asBitmapText("3", "joystix_monospace", 7, 0xFFFFFF)
+            .asText("Level:", style)
             .build().width
 
         new ECS.Builder(this.scene)
-            .localPos(levelNumberStartPositionx + levelNumberTextWidth + gapSpace, 0)
+            .localPos(levelNumberStartPositionx + levelNumberTextWidth + gapSpace, secondRow)
             .withParent(panel)
             .asText(levelNumber.toString(), style)
             .withName(LEVEL_NUMBER_TEXT)
             .build()
 
-        let timeStartPositionx = GAME_WIDTH - 150
+        let timeStartPositionx = GAME_WIDTH / 2 + 40
         let timeTextWidth = new ECS.Builder(this.scene)
-            .localPos(timeStartPositionx, 0)
+            .localPos(timeStartPositionx, secondRow)
             .withParent(panel)
             .asText("Time :", style)
             .build().width
 
         new ECS.Builder(this.scene)
-            .localPos(timeStartPositionx + timeTextWidth + gapSpace, 0)
+            .localPos(timeStartPositionx + timeTextWidth + gapSpace, secondRow)
             .withParent(panel)
             .asText("0", style)
             .withName(LEVEL_TIME_TEXT)

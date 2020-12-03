@@ -44,7 +44,7 @@ export enum Assets {
     FASTER_PU = "FASTER_PU",
     SHIELD_PU = "SHIELD_PU",
     SPRING_PU = "SPRING_PU",
-    FONT_JOYSTIX = "FONT_JOYSTIX"
+    FONT_JOYSTIX = "joystix_monospace"
 }
 
 export const P1_ROPE = "P1_ROPE"

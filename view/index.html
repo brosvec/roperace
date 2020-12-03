@@ -4,18 +4,35 @@
 <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
-    <title>My semestral work</title>
+    <title>Rope Race</title>
 </head>
 <style type="text/css">
     body {
-        /* TODO place your background here*/
-       background-color: black;
+        background-image: url("../assets/background.png");
+        background-size: cover;
+    }
+
+    footer {
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        position: fixed;
+        text-align: left;
+        background-color: rgb(41, 41, 41);
+        color: rgb(185, 185, 185);
+        z-index: -1;
+        font-family: monospace;
+        font-size: 10px;
+        padding: 5px;
+        padding-left: 2px;
+        padding-right: 20px;
     }
 </style>
 
 <body>
     <canvas id="gameCanvas"></canvas>
     <script src="../src/ropeRace.ts"></script>
+    <footer> Švec Petr v rámci předmětu NI-APH </footer>
 </body>
 
 </html>

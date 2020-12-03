@@ -3,6 +3,9 @@
   "author": "Adam Vesecký",
   "version": "4.4.0",
   "license": "MIT",
+  "engines": {
+    "node": "12.x"
+  },
   "scripts": {
     "dev": "node scripts/prebuild-project.js && parcel view/index.html --out-dir build_project",
     "dev-slides": "npm run prebuild-slides && npm run serve-slides",

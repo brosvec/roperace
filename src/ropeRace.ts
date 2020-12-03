@@ -58,8 +58,7 @@ class RopeRace {
 			.add(Assets.MENU, '../../assets/Menu.png')
 			.add(Assets.PLAY_BTN, '../../assets/play_btn1.png')
 			/*  TODO: CHANGE fonts */
-			//	.add(Assets.FONT_JOYSTIX, '../../assets/joystix_monospace.ttf')
-			//.add('../../assets/nes_font_digits.fnt')
+			.add('joystix_monospaces', '../../assets/joystix_monospace.ttf')
 			.add(Assets.FIRST_AID_PU, '../../assets/0_FirstAidKit.png')
 			.add(Assets.FINISH, '../../assets/finnish_flag.png')
 			.add(Assets.SHIELD_PU, '../../assets/0_SHIELD.png')

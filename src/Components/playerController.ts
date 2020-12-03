@@ -263,7 +263,8 @@ export class PlayerController extends ECS.Component {
         }
         Matter.Composite.remove(this.binder.mWorld, this.player.playerMatter.body, true)
         this.owner.destroy()
-    }l
+    }
+    
     private removePowerUp(powerUp : Matter.Body ) {
         let powerUpObj = this.binder.findSyncObjectForBody(powerUp)
         Matter.Composite.remove(this.binder.mWorld, powerUp, true)

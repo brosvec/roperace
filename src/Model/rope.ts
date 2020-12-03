@@ -3,6 +3,8 @@ import * as PixiMatter from '../../libs/pixi-matter';
 import * as Matter from "matter-js";
 import { Player } from "../Model/player";
 import * as ECS from '../../libs/pixi-ecs';
+import { utils } from "pixi.js";
+import { UtilFunctions } from "../Utils/utilFunctions";
 
 
 
@@ -37,6 +39,13 @@ export class Rope {
             {
                 frictionAir: 0
             })) as PixiMatter.MatterBody
+
+        let textureStartPosition = UtilFunctions.getTexturePosition(ropeEnd.position, ROPE_END_HEIGHT, ROPE_END_HEIGHT)
+        let rectangle = new PIXI.Graphics();
+        rectangle.beginFill(0xF0F0F0);
+        rectangle.drawRect(textureStartPosition.x, textureStartPosition.y, ROPE_END_HEIGHT, ROPE_END_HEIGHT);
+        rectangle.endFill();
+        ropeEnd.addChild(rectangle);
 
         // constraint
         let constraint = Matter.Constraint.create({
